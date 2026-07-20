@@ -141,6 +141,35 @@
   }
   .toolbar input[type=text]:focus{outline:none;border-color:var(--navy);}
   .toolbar .count{font-size:12.5px;color:var(--ink-soft);white-space:nowrap;}
+  .btn-excel{
+    display:flex;align-items:center;gap:7px;
+    padding:10px 16px;border:1.5px solid var(--line);border-radius:9px;
+    background:#fff;color:var(--navy-deep);font-family:inherit;font-size:13px;font-weight:700;
+    cursor:pointer;white-space:nowrap;transition:background .15s,border-color .15s;
+  }
+  .btn-excel:hover{background:#f5f6fb;border-color:var(--navy);}
+
+  .detail-actions{
+    grid-column:1/-1;display:flex;gap:8px;margin-top:10px;padding-top:14px;
+    border-top:1px solid var(--line);
+  }
+  .btn-sm{
+    padding:8px 14px;border-radius:8px;font-family:inherit;font-size:12.5px;font-weight:700;
+    cursor:pointer;border:1.5px solid transparent;
+  }
+  .btn-sm.edit{background:#fff;border-color:var(--navy);color:var(--navy-deep);}
+  .btn-sm.edit:hover{background:#eef0fb;}
+  .btn-sm.save{background:var(--navy);color:#fff;}
+  .btn-sm.save:hover{background:var(--navy-deep);}
+  .btn-sm.cancel{background:#fff;border-color:var(--line);color:var(--ink-soft);}
+  .btn-sm.cancel:hover{background:#f5f6fb;}
+  .btn-sm.delete{background:var(--tinggi-bg);color:var(--tinggi-fg);margin-left:auto;}
+  .btn-sm.delete:hover{background:#f6d7d5;}
+  .detail-inner .d-item input{
+    width:100%;padding:6px 8px;border:1.5px solid var(--line);border-radius:6px;
+    font-family:inherit;font-size:13px;margin-top:2px;
+  }
+  .detail-inner .d-item input:focus{outline:none;border-color:var(--navy);}
 
   .table-card{
     background:var(--card);border:1px solid var(--line);border-radius:var(--radius);
@@ -254,6 +283,10 @@
 
     <div class="toolbar">
       <input type="text" id="search" placeholder="Cari nama pasien…">
+      <button class="btn-excel" id="download-excel-btn">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:15px;height:15px"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 21h14"/></svg>
+        Unduh Excel
+      </button>
       <div class="count" id="result-count"></div>
     </div>
 
@@ -281,6 +314,7 @@
   <footer>SUNSTONE &middot; Dashboard riwayat pasien</footer>
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <script type="module">
   import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm";
 
@@ -416,31 +450,141 @@
 
     const detailTr = document.createElement("tr");
     detailTr.className = "detail-row";
+    detailTr.innerHTML = `<td colspan="5">${viewModeHTML(r)}</td>`;
+    tr.after(detailTr);
+
+    wireViewButtons(detailTr, r);
+  }
+
+  function viewModeHTML(r) {
     const probRendah = r.prob_rendah ?? 0, probSedang = r.prob_sedang ?? 0, probTinggi = r.prob_tinggi ?? 0;
-    detailTr.innerHTML = `
-      <td colspan="5">
-        <div class="detail-inner">
-          <div class="d-item"><div class="k">Rokok/hari</div><div class="v">${r.rokok_per_hari ?? "-"}</div></div>
-          <div class="d-item"><div class="k">Lama merokok</div><div class="v">${r.lama_merokok_tahun ? r.lama_merokok_tahun + " th" : "-"}</div></div>
-          <div class="d-item"><div class="k">MG811 (CO2)</div><div class="v mono">${r.mg811 ?? "-"}</div></div>
-          <div class="d-item"><div class="k">MQ7 (CO)</div><div class="v mono">${r.mq7 ?? "-"}</div></div>
-          <div class="d-item"><div class="k">MQ3 (Etanol)</div><div class="v mono">${r.mq3 ?? "-"}</div></div>
-          <div class="d-item"><div class="k">MQ135 (VOC)</div><div class="v mono">${r.mq135 ?? "-"}</div></div>
-          <div class="d-item"><div class="k">ID sesi</div><div class="v mono">${r.id_sesi ?? "-"}</div></div>
-          <div class="d-item"><div class="k">Confidence</div><div class="v">${r.confidence_persen ?? "-"}%</div></div>
-          <div class="prob-bar-wrap">
-            <div class="k">Probabilitas kelas</div>
-            <div class="prob-bar">
-              <span style="width:${probRendah}%;background:var(--rendah-fg)"></span>
-              <span style="width:${probSedang}%;background:var(--sedang-fg)"></span>
-              <span style="width:${probTinggi}%;background:var(--tinggi-fg)"></span>
-            </div>
+    return `
+      <div class="detail-inner">
+        <div class="d-item"><div class="k">Nama</div><div class="v">${r.nama ?? "-"}</div></div>
+        <div class="d-item"><div class="k">Umur</div><div class="v">${r.umur ? r.umur + " th" : "-"}</div></div>
+        <div class="d-item"><div class="k">Rokok/hari</div><div class="v">${r.rokok_per_hari ?? "-"}</div></div>
+        <div class="d-item"><div class="k">Lama merokok</div><div class="v">${r.lama_merokok_tahun ? r.lama_merokok_tahun + " th" : "-"}</div></div>
+        <div class="d-item"><div class="k">MG811 (CO2)</div><div class="v mono">${r.mg811 ?? "-"}</div></div>
+        <div class="d-item"><div class="k">MQ7 (CO)</div><div class="v mono">${r.mq7 ?? "-"}</div></div>
+        <div class="d-item"><div class="k">MQ3 (Etanol)</div><div class="v mono">${r.mq3 ?? "-"}</div></div>
+        <div class="d-item"><div class="k">MQ135 (VOC)</div><div class="v mono">${r.mq135 ?? "-"}</div></div>
+        <div class="d-item"><div class="k">Hasil kategori</div><div class="v">${r.hasil_kategori ?? "-"}</div></div>
+        <div class="d-item"><div class="k">Confidence</div><div class="v">${r.confidence_persen ?? "-"}%</div></div>
+        <div class="d-item"><div class="k">ID sesi</div><div class="v mono">${r.id_sesi ?? "-"}</div></div>
+        <div class="prob-bar-wrap">
+          <div class="k">Probabilitas kelas</div>
+          <div class="prob-bar">
+            <span style="width:${probRendah}%;background:var(--rendah-fg)"></span>
+            <span style="width:${probSedang}%;background:var(--sedang-fg)"></span>
+            <span style="width:${probTinggi}%;background:var(--tinggi-fg)"></span>
           </div>
         </div>
-      </td>
+        <div class="detail-actions">
+          <button class="btn-sm edit" data-act="edit">Edit</button>
+          <button class="btn-sm delete" data-act="delete">Hapus riwayat ini</button>
+        </div>
+      </div>
     `;
-    tr.after(detailTr);
   }
+
+  function editModeHTML(r) {
+    const opt = (val) => ["Rendah", "Sedang", "Tinggi"].map(
+      c => `<option value="${c}" ${r.hasil_kategori === c ? "selected" : ""}>${c}</option>`
+    ).join("");
+    return `
+      <div class="detail-inner">
+        <div class="d-item"><div class="k">Nama</div><input data-f="nama" type="text" value="${r.nama ?? ""}"></div>
+        <div class="d-item"><div class="k">Umur</div><input data-f="umur" type="number" value="${r.umur ?? ""}"></div>
+        <div class="d-item"><div class="k">Rokok/hari</div><input data-f="rokok_per_hari" type="number" value="${r.rokok_per_hari ?? ""}"></div>
+        <div class="d-item"><div class="k">Lama merokok</div><input data-f="lama_merokok_tahun" type="number" value="${r.lama_merokok_tahun ?? ""}"></div>
+        <div class="d-item"><div class="k">MG811 (CO2)</div><input data-f="mg811" type="number" step="0.01" value="${r.mg811 ?? ""}"></div>
+        <div class="d-item"><div class="k">MQ7 (CO)</div><input data-f="mq7" type="number" step="0.01" value="${r.mq7 ?? ""}"></div>
+        <div class="d-item"><div class="k">MQ3 (Etanol)</div><input data-f="mq3" type="number" step="0.01" value="${r.mq3 ?? ""}"></div>
+        <div class="d-item"><div class="k">MQ135 (VOC)</div><input data-f="mq135" type="number" step="0.01" value="${r.mq135 ?? ""}"></div>
+        <div class="d-item"><div class="k">Hasil kategori</div>
+          <select data-f="hasil_kategori" style="width:100%;padding:6px 8px;border:1.5px solid var(--line);border-radius:6px;font-family:inherit;font-size:13px;margin-top:2px;">${opt()}</select>
+        </div>
+        <div class="d-item"><div class="k">Confidence (%)</div><input data-f="confidence_persen" type="number" step="0.1" value="${r.confidence_persen ?? ""}"></div>
+        <div class="d-item"><div class="k">ID sesi</div><div class="v mono">${r.id_sesi ?? "-"}</div></div>
+        <div class="detail-actions">
+          <button class="btn-sm save" data-act="save">Simpan perubahan</button>
+          <button class="btn-sm cancel" data-act="cancel">Batal</button>
+        </div>
+      </div>
+    `;
+  }
+
+  function wireViewButtons(detailTr, r) {
+    detailTr.querySelector('[data-act="edit"]').addEventListener("click", () => {
+      detailTr.querySelector("td").innerHTML = editModeHTML(r);
+      wireEditButtons(detailTr, r);
+    });
+    detailTr.querySelector('[data-act="delete"]').addEventListener("click", async () => {
+      if (!confirm(`Hapus riwayat "${r.nama ?? "pasien ini"}"? Tindakan ini tidak bisa dibatalkan.`)) return;
+      const { error } = await supabase.from("riwayat").delete().eq("id", r.id);
+      if (error) { alert("Gagal menghapus: " + error.message); return; }
+      loadRiwayat();
+    });
+  }
+
+  function wireEditButtons(detailTr, r) {
+    detailTr.querySelector('[data-act="cancel"]').addEventListener("click", () => {
+      detailTr.querySelector("td").innerHTML = viewModeHTML(r);
+      wireViewButtons(detailTr, r);
+    });
+    detailTr.querySelector('[data-act="save"]').addEventListener("click", async () => {
+      const inputs = detailTr.querySelectorAll("[data-f]");
+      const update = {};
+      inputs.forEach(el => {
+        const field = el.dataset.f;
+        const numericFields = ["umur", "rokok_per_hari", "lama_merokok_tahun", "mg811", "mq7", "mq3", "mq135", "confidence_persen"];
+        update[field] = numericFields.includes(field)
+          ? (el.value === "" ? null : Number(el.value))
+          : el.value;
+      });
+      // indeks_brinkman dihitung ulang otomatis kalau rokok/hari & lama merokok diisi
+      if (update.rokok_per_hari != null && update.lama_merokok_tahun != null) {
+        update.indeks_brinkman = update.rokok_per_hari * update.lama_merokok_tahun;
+      }
+      const { error } = await supabase.from("riwayat").update(update).eq("id", r.id);
+      if (error) { alert("Gagal menyimpan: " + error.message); return; }
+      loadRiwayat();
+    });
+  }
+
+  function downloadExcel() {
+    const term = document.getElementById("search").value.trim().toLowerCase();
+    const rows = term ? allRows.filter(r => (r.nama ?? "").toLowerCase().includes(term)) : allRows;
+
+    const data = rows.map(r => ({
+      "Tanggal": r.tanggal ?? "",
+      "Nama": r.nama ?? "",
+      "Umur": r.umur ?? "",
+      "Rokok/hari": r.rokok_per_hari ?? "",
+      "Lama merokok (th)": r.lama_merokok_tahun ?? "",
+      "Indeks Brinkman": r.indeks_brinkman ?? "",
+      "MG811 (CO2)": r.mg811 ?? "",
+      "MQ7 (CO)": r.mq7 ?? "",
+      "MQ3 (Etanol)": r.mq3 ?? "",
+      "MQ135 (VOC)": r.mq135 ?? "",
+      "Hasil Kategori": r.hasil_kategori ?? "",
+      "Confidence (%)": r.confidence_persen ?? "",
+      "Prob Rendah (%)": r.prob_rendah ?? "",
+      "Prob Sedang (%)": r.prob_sedang ?? "",
+      "Prob Tinggi (%)": r.prob_tinggi ?? "",
+      "ID Sesi": r.id_sesi ?? "",
+    }));
+
+    const ws = XLSX.utils.json_to_sheet(data);
+    ws["!cols"] = Object.keys(data[0] || {}).map(k => ({ wch: Math.max(k.length + 2, 14) }));
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Riwayat");
+
+    const today = new Date().toISOString().slice(0, 10);
+    XLSX.writeFile(wb, `sunstone_riwayat_${today}.xlsx`);
+  }
+
+  document.getElementById("download-excel-btn").addEventListener("click", downloadExcel);
 
   document.getElementById("search").addEventListener("input", (e) => {
     const term = e.target.value.trim().toLowerCase();
