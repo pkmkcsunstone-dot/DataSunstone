@@ -1,0 +1,455 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SUNSTONE — Riwayat Pasien</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --navy:#15207a;
+    --navy-deep:#0c1550;
+    --paper:#f5f6fb;
+    --card:#ffffff;
+    --line:#e3e5f2;
+    --ink:#1c2033;
+    --ink-soft:#63678a;
+    --rendah-bg:#e6f7ee; --rendah-fg:#33b374;
+    --sedang-bg:#fdf3e3; --sedang-fg:#ba7a17;
+    --tinggi-bg:#fbe9e8; --tinggi-fg:#d94840;
+    --radius:14px;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--paper);
+    color:var(--ink);
+    font-family:'Inter',system-ui,sans-serif;
+    min-height:100vh;
+  }
+  .mono{font-family:'JetBrains Mono',monospace;}
+
+  /* ---------- LOGIN ---------- */
+  #login-view{
+    min-height:100vh;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    background:
+      radial-gradient(circle at 15% 20%, rgba(21,32,122,0.10), transparent 45%),
+      radial-gradient(circle at 85% 80%, rgba(21,32,122,0.08), transparent 45%),
+      var(--paper);
+    padding:20px;
+  }
+  .login-card{
+    width:100%;
+    max-width:380px;
+    background:var(--card);
+    border:1px solid var(--line);
+    border-radius:var(--radius);
+    padding:36px 32px 32px;
+    box-shadow:0 20px 50px -25px rgba(21,32,122,0.35);
+  }
+  .brand{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    margin-bottom:28px;
+  }
+  .brand-mark{
+    width:38px;height:38px;border-radius:10px;
+    background:var(--navy);
+    display:flex;align-items:center;justify-content:center;
+    flex-shrink:0;
+  }
+  .brand-mark svg{width:20px;height:20px;stroke:#fff;}
+  .brand-name{font-weight:800;font-size:19px;letter-spacing:0.01em;color:var(--navy-deep);}
+  .brand-sub{font-size:12px;color:var(--ink-soft);margin-top:1px;}
+
+  .field{margin-bottom:16px;}
+  .field label{
+    display:block;font-size:12.5px;font-weight:600;color:var(--ink-soft);
+    margin-bottom:6px;
+  }
+  .field input{
+    width:100%;padding:11px 13px;
+    border:1.5px solid var(--line);border-radius:9px;
+    font-size:14.5px;font-family:inherit;color:var(--ink);
+    background:#fbfbfe;
+    transition:border-color .15s, background .15s;
+  }
+  .field input:focus{
+    outline:none;border-color:var(--navy);background:#fff;
+  }
+  .btn-primary{
+    width:100%;padding:12px;margin-top:6px;
+    background:var(--navy);color:#fff;border:none;border-radius:9px;
+    font-size:14.5px;font-weight:700;font-family:inherit;cursor:pointer;
+    transition:background .15s, transform .05s;
+  }
+  .btn-primary:hover{background:var(--navy-deep);}
+  .btn-primary:active{transform:scale(0.99);}
+  .btn-primary:disabled{opacity:0.6;cursor:default;}
+  .login-error{
+    display:none;
+    margin-top:14px;padding:10px 12px;
+    background:var(--tinggi-bg);color:var(--tinggi-fg);
+    border-radius:8px;font-size:13px;font-weight:500;
+  }
+
+  /* ---------- DASHBOARD ---------- */
+  #dash-view{display:none;min-height:100vh;}
+  header.topbar{
+    background:var(--navy);
+    color:#fff;
+    padding:16px 28px;
+    display:flex;align-items:center;justify-content:space-between;
+  }
+  header.topbar .brand-name{color:#fff;}
+  header.topbar .brand{margin-bottom:0;}
+  header.topbar .brand-mark{background:rgba(255,255,255,0.16);}
+  .signout-btn{
+    background:rgba(255,255,255,0.12);color:#fff;border:1px solid rgba(255,255,255,0.25);
+    padding:8px 16px;border-radius:8px;font-family:inherit;font-size:13px;font-weight:600;
+    cursor:pointer;transition:background .15s;
+  }
+  .signout-btn:hover{background:rgba(255,255,255,0.22);}
+
+  main{max-width:1080px;margin:0 auto;padding:28px 24px 60px;}
+
+  .stat-row{
+    display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:24px;
+  }
+  .stat-card{
+    background:var(--card);border:1px solid var(--line);border-radius:12px;
+    padding:16px 18px;
+  }
+  .stat-card .num{font-size:26px;font-weight:800;color:var(--navy-deep);line-height:1.1;}
+  .stat-card .lbl{font-size:12px;color:var(--ink-soft);margin-top:4px;font-weight:500;}
+  .stat-card.rendah .num{color:var(--rendah-fg);}
+  .stat-card.sedang .num{color:var(--sedang-fg);}
+  .stat-card.tinggi .num{color:var(--tinggi-fg);}
+
+  .toolbar{
+    display:flex;align-items:center;gap:12px;margin-bottom:14px;flex-wrap:wrap;
+  }
+  .toolbar input[type=text]{
+    flex:1;min-width:200px;padding:10px 14px;border:1.5px solid var(--line);
+    border-radius:9px;font-family:inherit;font-size:13.5px;background:#fff;
+  }
+  .toolbar input[type=text]:focus{outline:none;border-color:var(--navy);}
+  .toolbar .count{font-size:12.5px;color:var(--ink-soft);white-space:nowrap;}
+
+  .table-card{
+    background:var(--card);border:1px solid var(--line);border-radius:var(--radius);
+    overflow:hidden;
+  }
+  table{width:100%;border-collapse:collapse;font-size:13.5px;}
+  thead th{
+    text-align:left;padding:12px 16px;font-size:11.5px;font-weight:700;
+    text-transform:uppercase;letter-spacing:0.04em;color:var(--ink-soft);
+    background:#fafafd;border-bottom:1px solid var(--line);
+  }
+  tbody tr{border-bottom:1px solid var(--line);cursor:pointer;transition:background .1s;}
+  tbody tr:last-child{border-bottom:none;}
+  tbody tr:hover{background:#fafaff;}
+  tbody td{padding:12px 16px;color:var(--ink);}
+  .name-cell{font-weight:600;}
+  .pill{
+    display:inline-block;padding:3px 10px;border-radius:999px;
+    font-size:12px;font-weight:700;
+  }
+  .pill.rendah{background:var(--rendah-bg);color:var(--rendah-fg);}
+  .pill.sedang{background:var(--sedang-bg);color:var(--sedang-fg);}
+  .pill.tinggi{background:var(--tinggi-bg);color:var(--tinggi-fg);}
+  .conf{color:var(--ink-soft);font-size:12.5px;margin-left:6px;}
+
+  .empty-state{
+    text-align:center;padding:70px 20px;color:var(--ink-soft);
+  }
+  .empty-state svg{width:44px;height:44px;stroke:var(--line);margin-bottom:14px;}
+  .empty-state .t{font-weight:700;color:var(--ink);font-size:15px;margin-bottom:4px;}
+  .empty-state .s{font-size:13px;}
+
+  /* detail row */
+  .detail-row td{
+    background:#fafaff;padding:0;
+  }
+  .detail-inner{
+    padding:18px 22px 20px;
+    display:grid;grid-template-columns:repeat(4,1fr);gap:18px;
+    border-top:1px dashed var(--line);
+  }
+  .detail-inner .d-item .k{font-size:11px;color:var(--ink-soft);font-weight:600;text-transform:uppercase;letter-spacing:0.03em;}
+  .detail-inner .d-item .v{font-size:14px;font-weight:600;margin-top:3px;}
+  .prob-bar-wrap{grid-column:1/-1;margin-top:4px;}
+  .prob-bar-wrap .k{font-size:11px;color:var(--ink-soft);font-weight:600;text-transform:uppercase;letter-spacing:0.03em;margin-bottom:8px;}
+  .prob-bar{height:8px;border-radius:5px;background:var(--line);overflow:hidden;display:flex;}
+  .prob-bar span{height:100%;}
+
+  footer{
+    text-align:center;padding:20px;color:var(--ink-soft);font-size:12px;
+  }
+
+  @media (max-width:680px){
+    .stat-row{grid-template-columns:repeat(2,1fr);}
+    .detail-inner{grid-template-columns:repeat(2,1fr);}
+    thead{display:none;}
+    table, tbody, tr, td{display:block;width:100%;}
+    tbody tr{padding:10px 16px;}
+    tbody td{padding:4px 0;}
+  }
+</style>
+</head>
+<body>
+
+<!-- ============ LOGIN ============ -->
+<div id="login-view">
+  <div class="login-card">
+    <div class="brand">
+      <div class="brand-mark">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6.5 3C5 3 4 4.5 4 7c0 5 1.5 8 1.5 11 0 1.5 1 3 2.5 3s2-1.5 2-3V9"/><path d="M17.5 3C19 3 20 4.5 20 7c0 5-1.5 8-1.5 11 0 1.5-1 3-2.5 3s-2-1.5-2-3V9"/><path d="M11 9a1 1 0 1 0 2 0 1 1 0 1 0-2 0Z"/></svg>
+      </div>
+      <div>
+        <div class="brand-name">SUNSTONE</div>
+        <div class="brand-sub">Dashboard riwayat pasien</div>
+      </div>
+    </div>
+    <form id="login-form">
+      <div class="field">
+        <label for="email">Email</label>
+        <input type="email" id="email" autocomplete="username" required>
+      </div>
+      <div class="field">
+        <label for="password">Kata sandi</label>
+        <input type="password" id="password" autocomplete="current-password" required>
+      </div>
+      <button type="submit" class="btn-primary" id="login-btn">Masuk</button>
+      <div class="login-error" id="login-error"></div>
+    </form>
+  </div>
+</div>
+
+<!-- ============ DASHBOARD ============ -->
+<div id="dash-view">
+  <header class="topbar">
+    <div class="brand">
+      <div class="brand-mark">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6.5 3C5 3 4 4.5 4 7c0 5 1.5 8 1.5 11 0 1.5 1 3 2.5 3s2-1.5 2-3V9"/><path d="M17.5 3C19 3 20 4.5 20 7c0 5-1.5 8-1.5 11 0 1.5-1 3-2.5 3s-2-1.5-2-3V9"/><path d="M11 9a1 1 0 1 0 2 0 1 1 0 1 0-2 0Z"/></svg>
+      </div>
+      <div class="brand-name">SUNSTONE</div>
+    </div>
+    <button class="signout-btn" id="signout-btn">Keluar</button>
+  </header>
+
+  <main>
+    <div class="stat-row">
+      <div class="stat-card"><div class="num" id="stat-total">0</div><div class="lbl">Total pasien</div></div>
+      <div class="stat-card rendah"><div class="num" id="stat-rendah">0</div><div class="lbl">Risiko rendah</div></div>
+      <div class="stat-card sedang"><div class="num" id="stat-sedang">0</div><div class="lbl">Risiko sedang</div></div>
+      <div class="stat-card tinggi"><div class="num" id="stat-tinggi">0</div><div class="lbl">Risiko tinggi</div></div>
+    </div>
+
+    <div class="toolbar">
+      <input type="text" id="search" placeholder="Cari nama pasien…">
+      <div class="count" id="result-count"></div>
+    </div>
+
+    <div class="table-card">
+      <table>
+        <thead>
+          <tr>
+            <th>Tanggal</th>
+            <th>Nama</th>
+            <th>Umur</th>
+            <th>Indeks Brinkman</th>
+            <th>Hasil</th>
+          </tr>
+        </thead>
+        <tbody id="table-body"></tbody>
+      </table>
+      <div class="empty-state" id="empty-state" style="display:none">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="1.5"><path d="M4 19.5V6a2 2 0 0 1 2-2h9l5 5v10.5a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2Z"/><path d="M14 4v4a1 1 0 0 0 1 1h4"/></svg>
+        <div class="t">Belum ada riwayat</div>
+        <div class="s">Data akan muncul di sini setelah diupload dari alat SUNSTONE.</div>
+      </div>
+    </div>
+  </main>
+
+  <footer>SUNSTONE &middot; Dashboard riwayat pasien</footer>
+</div>
+
+<script type="module">
+  import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm";
+
+  // ======================================================================
+  const SUPABASE_URL = "https://mcrgiqzcmgxvygdotdla.supabase.co";
+  const SUPABASE_ANON_KEY = "sb_publishable_7dRqWBiUeDjWEwZ-DJr7-g_wAW58lau";
+
+  const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+  const loginView = document.getElementById("login-view");
+  const dashView = document.getElementById("dash-view");
+  const loginForm = document.getElementById("login-form");
+  const loginBtn = document.getElementById("login-btn");
+  const loginError = document.getElementById("login-error");
+
+  let allRows = [];
+  let realtimeChannel = null;
+
+  loginForm.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    loginError.style.display = "none";
+    loginBtn.disabled = true;
+    loginBtn.textContent = "Memeriksa…";
+    const email = document.getElementById("email").value.trim();
+    const password = document.getElementById("password").value;
+
+    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    if (error) {
+      loginError.textContent = "Email atau kata sandi salah.";
+      loginError.style.display = "block";
+    }
+    loginBtn.disabled = false;
+    loginBtn.textContent = "Masuk";
+  });
+
+  document.getElementById("signout-btn").addEventListener("click", () => supabase.auth.signOut());
+
+  supabase.auth.onAuthStateChange((event, session) => {
+    if (session) {
+      loginView.style.display = "none";
+      dashView.style.display = "block";
+      loadRiwayat();
+      subscribeRealtime();
+    } else {
+      dashView.style.display = "none";
+      loginView.style.display = "flex";
+      if (realtimeChannel) supabase.removeChannel(realtimeChannel);
+    }
+  });
+
+  // cek sesi yang sudah ada (biar tidak logout tiap refresh halaman)
+  supabase.auth.getSession().then(({ data: { session } }) => {
+    if (session) {
+      loginView.style.display = "none";
+      dashView.style.display = "block";
+      loadRiwayat();
+      subscribeRealtime();
+    }
+  });
+
+  async function loadRiwayat() {
+    const { data, error } = await supabase
+      .from("riwayat")
+      .select("*")
+      .order("tanggal", { ascending: false });
+    if (error) {
+      console.error(error);
+      return;
+    }
+    allRows = data;
+    renderStats(allRows);
+    renderTable(allRows);
+  }
+
+  function subscribeRealtime() {
+    if (realtimeChannel) supabase.removeChannel(realtimeChannel);
+    realtimeChannel = supabase
+      .channel("riwayat-changes")
+      .on("postgres_changes", { event: "*", schema: "public", table: "riwayat" }, () => {
+        loadRiwayat();
+      })
+      .subscribe();
+  }
+
+  function renderStats(rows) {
+    document.getElementById("stat-total").textContent = rows.length;
+    document.getElementById("stat-rendah").textContent = rows.filter(r => r.hasil_kategori === "Rendah").length;
+    document.getElementById("stat-sedang").textContent = rows.filter(r => r.hasil_kategori === "Sedang").length;
+    document.getElementById("stat-tinggi").textContent = rows.filter(r => r.hasil_kategori === "Tinggi").length;
+  }
+
+  function pillClass(kategori) {
+    if (kategori === "Rendah") return "rendah";
+    if (kategori === "Sedang") return "sedang";
+    if (kategori === "Tinggi") return "tinggi";
+    return "";
+  }
+
+  function renderTable(rows) {
+    const tbody = document.getElementById("table-body");
+    const emptyState = document.getElementById("empty-state");
+    tbody.innerHTML = "";
+
+    if (rows.length === 0) {
+      emptyState.style.display = "block";
+      document.getElementById("result-count").textContent = "";
+      return;
+    }
+    emptyState.style.display = "none";
+    document.getElementById("result-count").textContent = `${rows.length} data`;
+
+    rows.forEach((r) => {
+      const tr = document.createElement("tr");
+      tr.innerHTML = `
+        <td class="mono">${r.tanggal ?? "-"}</td>
+        <td class="name-cell">${r.nama ?? "-"}</td>
+        <td>${r.umur ? r.umur + " th" : "-"}</td>
+        <td>${r.indeks_brinkman ?? "-"}</td>
+        <td><span class="pill ${pillClass(r.hasil_kategori)}">${r.hasil_kategori ?? "-"}</span><span class="conf">${r.confidence_persen ?? "-"}%</span></td>
+      `;
+      tr.addEventListener("click", () => toggleDetail(tr, r));
+      tbody.appendChild(tr);
+    });
+  }
+
+  function toggleDetail(tr, r) {
+    const next = tr.nextElementSibling;
+    if (next && next.classList.contains("detail-row")) {
+      next.remove();
+      return;
+    }
+    document.querySelectorAll(".detail-row").forEach(el => el.remove());
+
+    const detailTr = document.createElement("tr");
+    detailTr.className = "detail-row";
+    const probRendah = r.prob_rendah ?? 0, probSedang = r.prob_sedang ?? 0, probTinggi = r.prob_tinggi ?? 0;
+    detailTr.innerHTML = `
+      <td colspan="5">
+        <div class="detail-inner">
+          <div class="d-item"><div class="k">Rokok/hari</div><div class="v">${r.rokok_per_hari ?? "-"}</div></div>
+          <div class="d-item"><div class="k">Lama merokok</div><div class="v">${r.lama_merokok_tahun ? r.lama_merokok_tahun + " th" : "-"}</div></div>
+          <div class="d-item"><div class="k">MG811 (CO2)</div><div class="v mono">${r.mg811 ?? "-"}</div></div>
+          <div class="d-item"><div class="k">MQ7 (CO)</div><div class="v mono">${r.mq7 ?? "-"}</div></div>
+          <div class="d-item"><div class="k">MQ3 (Etanol)</div><div class="v mono">${r.mq3 ?? "-"}</div></div>
+          <div class="d-item"><div class="k">MQ135 (VOC)</div><div class="v mono">${r.mq135 ?? "-"}</div></div>
+          <div class="d-item"><div class="k">ID sesi</div><div class="v mono">${r.id_sesi ?? "-"}</div></div>
+          <div class="d-item"><div class="k">Confidence</div><div class="v">${r.confidence_persen ?? "-"}%</div></div>
+          <div class="prob-bar-wrap">
+            <div class="k">Probabilitas kelas</div>
+            <div class="prob-bar">
+              <span style="width:${probRendah}%;background:var(--rendah-fg)"></span>
+              <span style="width:${probSedang}%;background:var(--sedang-fg)"></span>
+              <span style="width:${probTinggi}%;background:var(--tinggi-fg)"></span>
+            </div>
+          </div>
+        </div>
+      </td>
+    `;
+    tr.after(detailTr);
+  }
+
+  document.getElementById("search").addEventListener("input", (e) => {
+    const term = e.target.value.trim().toLowerCase();
+    const filtered = term
+      ? allRows.filter(r => (r.nama ?? "").toLowerCase().includes(term))
+      : allRows;
+    renderTable(filtered);
+  });
+</script>
+
+</body>
+</html>
